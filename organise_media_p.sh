@@ -1,5 +1,5 @@
 #!/bin/bash
-# organize_media_parallel.sh
+# organize_media_p.sh
 # This script recursively processes photos and videos from a source folder,
 # organizing them into year/month/day subfolders at a destination based on metadata.
 # Processing for each file is done in parallel using xargs.
@@ -55,21 +55,19 @@ process_file() {
     if [ -z "$capture_date" ]; then
         capture_date=$(exiftool -CreateDate -d "%Y/%m/%d" "$file" | awk -F': ' '{print $2}' | head -n1)
     fi
-
-    # If no exif date is available, use the file creation date.
-    if [ -z "$capture_date" ]; then
-        # Using macOS stat command to get file creation date formatted as YYYY/MM/DD.
-        # %SB with a format (-t) is used for the birth time.
-        capture_date=$(stat -f "%SB" -t "%Y/%m/%d" "$file")
-        # Log to nodates.log that we're using the file creation date.
-        echo "Using creation date for file: $file (date: $capture_date)" >> "$NODATES_LOG"
+    # Check if capture_date is empty or starts with "0000"
+    if [ -z "$capture_date" ] || [[ "$capture_date" == 0000* ]]; then
+        # Use the macOS file creation date and log that we're falling back to it.
+        creation_date=$(stat -f "%SB" -t "%Y/%m/%d" "$file")
+        if [ -n "$creation_date" ]; then
+            capture_date="$creation_date"
+            echo "Using creation date for file: $file (date: $capture_date)" >> "$NODATES_LOG"
+        else
+            echo "ERROR: No valid date found for: $file" >> "$ERROR_LOG"
+            return
+        fi
     fi
 
-    # If still no date, log the error and skip processing this file.
-    if [ -z "$capture_date" ]; then
-        echo "ERROR: No capture date or creation date found for: $file" >> "$ERROR_LOG"
-        return
-    fi
 
     # Build the destination directory and full target path.
     target_dir="$DEST/$capture_date"
