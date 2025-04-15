@@ -54,7 +54,9 @@ for root, dirs, files in os.walk(PHOTOS_FOLDERS_ROOT):
     day_str = extract_day_from_path(root, PHOTOS_FOLDERS_ROOT)
     # If we can't derive a day, then this folder isn't at the expected level.
     if not day_str:
-        continue
+        #make a new key for this, which will never be in photos (so we'll err on selecting dupes)
+        day_str = f"9999-{os.path.dirname(root)[-1]}"
+        print(f"Created new key base: {day_str} for root: {root}")
     
     for file in files:
         # Build the key as (filename, day_str)
