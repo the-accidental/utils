@@ -8,7 +8,7 @@ PHOTOS_LIBRARY_PATH = os.path.expanduser("~/Pictures/Photos Library.photoslibrar
 # Path to the directory containing the .MOV files to process.
 MOV_FILES_ROOT = os.path.expanduser("/Volumes/X8_wallace_pingu_tm/py_to_import/MOVsToCheck")
 # Destination folder to move the matching .MOV files into.
-DESTINATION_FOLDER = os.path.expanduser("/Volumes/X8_wallace_pingu_tm/py_to_import/MOVsToCheck/remove)
+DESTINATION_FOLDER = os.path.expanduser("/Volumes/X8_wallace_pingu_tm/py_to_import/MOVsToCheck/remove")
 # ---------------------
 
 # Ensure the destination folder exists
