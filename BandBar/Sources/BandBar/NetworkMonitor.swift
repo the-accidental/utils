@@ -11,7 +11,9 @@ struct ProcessDetail: Identifiable, Sendable {
     var downloadRate: Int
     var uploadRate: Int
     var connections: [String]
+    var total60s: Int
 }
+
 
 struct DataPoint: Identifiable, Sendable {
     let id = UUID()
@@ -30,11 +32,13 @@ class NetworkMonitor: ObservableObject {
     @Published var currentDownloadRate: Int = .zero
     @Published var currentUploadRate: Int = .zero
     @Published var topProcesses: [ProcessUIModel] = []
+    @Published var hasInitialData: Bool = false
     
     @Published var downloadHistory: [DataPoint] = []
     @Published var uploadHistory: [DataPoint] = []
 
     private var previousProcessStats: [Int: (down: Int, up: Int)] = [:]
+    private var processHistory: [Int: [(time: Date, down: Int, up: Int)]] = [:]
     private var monitoringTask: Task<Void, Never>?
     private var lastSampleTime: Date = Date()
     
@@ -137,7 +141,8 @@ class NetworkMonitor: ObservableObject {
                             totalUpload: bytesOut,
                             downloadRate: 0,
                             uploadRate: 0,
-                            connections: []
+                            connections: [],
+                            total60s: 0
                         )
                         
                         if let prev = previousProcessStats[pid] {
@@ -150,6 +155,16 @@ class NetworkMonitor: ObservableObject {
                             totalUpRate += detail.uploadRate
                         }
                         
+                        var history = processHistory[pid] ?? []
+                        history.append((time: now, down: bytesIn, up: bytesOut))
+                        let sixtySecondsAgo = now.addingTimeInterval(-60)
+                        history.removeAll { $0.time < sixtySecondsAgo }
+                        
+                        if let oldest = history.first {
+                            detail.total60s = max(0, (bytesIn - oldest.down) + (bytesOut - oldest.up))
+                        }
+                        
+                        processHistory[pid] = history
                         previousProcessStats[pid] = (bytesIn, bytesOut)
                         parsedProcesses[pid] = detail
                         currentPID = pid
@@ -178,6 +193,7 @@ class NetworkMonitor: ObservableObject {
         self.topProcesses = topWithIcons
         self.currentDownloadRate = totalDownRate
         self.currentUploadRate = totalUpRate
+        self.hasInitialData = true
         
         self.downloadHistory.append(DataPoint(time: now, rate: totalDownRate))
         if self.downloadHistory.count > 60 { self.downloadHistory.removeFirst() }
@@ -188,6 +204,8 @@ class NetworkMonitor: ObservableObject {
         if Int.random(in: 0...100) == 0 {
             let activePIDs = Set(parsedProcesses.keys)
             self.iconCache = self.iconCache.filter { activePIDs.contains($0.key) }
+            self.previousProcessStats = self.previousProcessStats.filter { activePIDs.contains($0.key) }
+            self.processHistory = self.processHistory.filter { activePIDs.contains($0.key) }
         }
     }
     

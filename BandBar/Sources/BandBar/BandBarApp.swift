@@ -15,7 +15,10 @@ struct BandBarApp: App {
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: "network")
-                if monitor.currentDownloadRate > 0 || monitor.currentUploadRate > 0 {
+                if !monitor.hasInitialData {
+                    Text("Updating...")
+                        .font(.system(size: 10, design: .monospaced))
+                } else if monitor.currentDownloadRate > 0 || monitor.currentUploadRate > 0 {
                     Text("↓\(formatBytes(monitor.currentDownloadRate)) ↑\(formatBytes(monitor.currentUploadRate))")
                         .font(.system(size: 10, design: .monospaced))
                 }

@@ -24,9 +24,9 @@ struct ContentView: View {
             // Sparklines
             HStack(spacing: 16) {
                 VStack(alignment: .leading) {
-                    Text("↓ \(formatBytes(monitor.currentDownloadRate))/s")
+                    Text(monitor.hasInitialData ? "↓ \(formatBytes(monitor.currentDownloadRate))/s" : "Updating...")
                         .font(.body)
-                        .foregroundColor(.green)
+                        .foregroundColor(monitor.hasInitialData ? .green : .secondary)
                     Chart(monitor.downloadHistory) { dp in
                         LineMark(
                             x: .value("Time", dp.time),
@@ -40,9 +40,9 @@ struct ContentView: View {
                 }
                 
                 VStack(alignment: .leading) {
-                    Text("↑ \(formatBytes(monitor.currentUploadRate))/s")
+                    Text(monitor.hasInitialData ? "↑ \(formatBytes(monitor.currentUploadRate))/s" : "Updating...")
                         .font(.body)
-                        .foregroundColor(.blue)
+                        .foregroundColor(monitor.hasInitialData ? .blue : .secondary)
                     Chart(monitor.uploadHistory) { dp in
                         LineMark(
                             x: .value("Time", dp.time),
@@ -101,9 +101,24 @@ struct ContentView: View {
                         .foregroundColor(.blue)
                 }
                 .width(60)
+                
+                TableColumn("60s") { proc in
+                    Text("\(formatBytes(proc.detail.total60s))")
+                        .font(.caption)
+                        .foregroundColor(.primary)
+                }
+                .width(60)
             }
         }
-        .frame(width: 380, height: 500)
+        .overlay {
+            if !monitor.hasInitialData {
+                ProgressView("Updating...")
+                    .padding()
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(8)
+            }
+        }
+        .frame(width: 440, height: 500)
     }
     
     private func formatBytes(_ bytes: Int) -> String {
